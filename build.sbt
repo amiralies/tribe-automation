@@ -18,6 +18,8 @@ version := "1.0"
 
 libraryDependencies += "dev.zio" %% "zio" % "2.0.1"
 
+addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
+
 // Note, it's not required for you to define these three settings. These are
 // mostly only necessary if you intend to publish your library's binaries on a
 // place like Sonatype.
