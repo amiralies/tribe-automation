@@ -18,13 +18,6 @@ object WebhookDTOs {
       @JsonKey("type") typ: WebhookType,
       data: Option[JsonObject]
   )
-  case class ChallengeData(challenge: String)
-
-  case class TestSuccess(
-      @JsonKey("type") typ: String,
-      status: String,
-      data: ChallengeData
-  )
 
 }
 
@@ -35,12 +28,6 @@ trait WebhookDTOsJsonSupport {
   import WebhookDTOs._
 
   implicit val jsonConfig: Configuration = Configuration.default
-
-  implicit val challengeDataCodec: Codec[ChallengeData] =
-    deriveConfiguredCodec[ChallengeData]
-
-  implicit val testSuccessCodec: Codec[TestSuccess] =
-    deriveConfiguredCodec[TestSuccess]
 
   implicit val webhookPayloadCodec: Codec[WebhookPayload] =
     deriveConfiguredCodec[WebhookPayload]
