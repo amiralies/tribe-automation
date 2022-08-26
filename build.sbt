@@ -18,7 +18,49 @@ version := "1.0"
 
 libraryDependencies += "dev.zio" %% "zio" % "2.0.1"
 
+val circeVersion = "0.14.2"
+
+libraryDependencies ++= Seq(
+  "io.circe" %% "circe-core",
+  "io.circe" %% "circe-generic",
+  "io.circe" %% "circe-generic-extras",
+  "io.circe" %% "circe-parser"
+).map(_ % circeVersion)
+
+val AkkaVersion = "2.6.8"
+val AkkaHttpVersion = "10.2.9"
+libraryDependencies ++= Seq(
+  "com.typesafe.akka" %% "akka-actor-typed" % AkkaVersion,
+  "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
+  "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion
+)
+libraryDependencies += "io.scalac" %% "zio-akka-http-interop" % "0.6.0"
+
+libraryDependencies += "de.heikoseeberger" %% "akka-http-circe" % "1.39.2"
+
+libraryDependencies += "com.beachape" %% "enumeratum" % "1.7.0"
+libraryDependencies += "com.beachape" %% "enumeratum-circe" % "1.7.0"
+
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.13" % "test"
+libraryDependencies += "org.scalatest" %% "scalatest-flatspec" % "3.2.13" % "test"
+libraryDependencies += "org.scalatest" %% "scalatest-shouldmatchers" % "3.2.13" % "test"
+
+
+libraryDependencies += "com.github.ghostdogpr" %% "caliban-client" % "2.0.1"
+
+
+val zioConfigVersion = "3.0.2"
+libraryDependencies += "dev.zio" %% "zio-config" % zioConfigVersion
+libraryDependencies += "dev.zio" %% "zio-config-magnolia" % zioConfigVersion
+libraryDependencies += "dev.zio" %% "zio-config-typesafe" % zioConfigVersion
+
+
 addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
+enablePlugins(CalibanPlugin)
+
+/* scalacOptions ++= Seq(          // use ++= to add to existing options */
+/* "-Ymacro-annotations" */
+/* ) */      
 
 // Note, it's not required for you to define these three settings. These are
 // mostly only necessary if you intend to publish your library's binaries on a
