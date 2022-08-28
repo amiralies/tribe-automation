@@ -8,6 +8,15 @@ case class InMemoryAutomationRepo(mapRef: Ref[Map[String, Automation]])
   override def insert(automation: domain.Automation): UIO[Unit] =
     mapRef.update(_ + (automation.id -> automation))
 
+  override def getAllByNetworkIdAndTrigger(
+      networkId: String,
+      trigger: Trigger
+  ): UIO[List[Automation]] = mapRef.get
+    .map(_.filter { case (_, automation) =>
+      automation.networkId == networkId && automation.trigger == trigger
+    })
+    .map(_.values.toList)
+
 }
 
 object InMemoryAutomationRepo {
