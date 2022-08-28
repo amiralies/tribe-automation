@@ -94,7 +94,7 @@ object AutomationServiceSpec extends ZIOSpecDefault {
     }
   ).provideShared(
     AutomationServiceImpl.layer,
-    AutomationEffectRunnerImpl.layer, // TODO mock,
+    ZLayer.succeed(new MockAutomationEffectRunner()),
     InMemoryAutomationRepo.layer.fresh
   )
 }
