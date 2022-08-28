@@ -13,7 +13,7 @@ object AutomationServiceSpec extends ZIOSpecDefault {
           "networkId",
           "First automation",
           Trigger.TrPostCreated,
-          AutomationAction(Action.SendNotifToAll("message"), Nil)
+          List(Action.SendNotifToAll("message"))
         )
         automation <- automationService.createAutomation(payload)
       } yield assertTrue(true)
@@ -26,11 +26,75 @@ object AutomationServiceSpec extends ZIOSpecDefault {
           "",
           "First automation",
           Trigger.TrPostCreated,
-          AutomationAction(Action.SendNotifToAll("message"), Nil)
+          List(Action.SendNotifToAll("message"))
         )
         error <- automationService.createAutomation(payload).flip
       } yield assertTrue(error == ValidationError)
+    },
+    test("createAutomation should fail when actions is empty") {
+      for {
+        automationService <- ZIO.service[AutomationService]
+        payload = CreateAutomationPayload(
+          "networkId",
+          "First automation",
+          Trigger.TrPostCreated,
+          List()
+        )
+        error <- automationService.createAutomation(payload).flip
+      } yield assertTrue(error == ValidationError)
+    },
+    test("createAutomation should fail when name is empty") {
+      for {
+        automationService <- ZIO.service[AutomationService]
+        payload = CreateAutomationPayload(
+          "networkId",
+          "",
+          Trigger.TrPostCreated,
+          List(Action.SendNotifToAll("message"))
+        )
+        error <- automationService.createAutomation(payload).flip
+      } yield assertTrue(error == ValidationError)
+    },
+    test(
+      "handlEvent should generate empty runactionevent list when here's no automation"
+    ) {
+      for {
+        automationService <- ZIO.service[AutomationService]
+        r <- automationService.handleEvent(
+          Event(
+            "thisIdDoesenotExist",
+            EventDesc.EvPostCreated("hi", "great stuff")
+          )
+        )
+      } yield assertTrue(r.effects.isEmpty)
+    },
+    test(
+      "handlEvent should generate proper runaction events based on given automation"
+    ) {
 
+      for {
+        automationService <- ZIO.service[AutomationService]
+        payload = CreateAutomationPayload(
+          "networkId2",
+          "First automation",
+          Trigger.TrPostCreated,
+          List(Action.SendNotifToAll("message"))
+        )
+        automation <- automationService.createAutomation(payload)
+        r <- automationService.handleEvent(
+          Event("networkId2", EventDesc.EvPostCreated("hi", "great stuff"))
+        )
+      } yield assertTrue(
+        r ==
+          RunEffectsEvent(
+            "networkId2",
+            List(Effect.EffSendNotifToAll("message"))
+          )
+      )
     }
-  ).provideShared(InMemoryAutomationRepo.layer, AutomationServiceImpl.layer)
+  ).provideShared(
+    AutomationServiceImpl.layer,
+    AutomationEffectRunnerImpl.layer, // TODO mock,
+    InMemoryAutomationRepo.layer.fresh
+  )
 }

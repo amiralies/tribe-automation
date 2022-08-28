@@ -11,11 +11,13 @@ trait AutomationService {
       payload: CreateAutomationPayload
   ): IO[ValidationError.type, Automation]
 
-  def handleEvent(event: Event): UIO[Unit]
+  def handleEvent(event: Event): UIO[RunEffectsEvent]
 }
 
-case class AutomationServiceImpl(automationRepo: AutomationRepo)
-    extends AutomationService {
+case class AutomationServiceImpl(
+    automationRepo: AutomationRepo,
+    automationEffectRunner: AutomationEffectRunner
+) extends AutomationService {
 
   override def createAutomation(
       payload: CreateAutomationPayload
@@ -29,15 +31,52 @@ case class AutomationServiceImpl(automationRepo: AutomationRepo)
       payload.trigger,
       payload.actions
     )
+    () <- automationRepo.insert(automation)
   } yield automation
 
-  override def handleEvent(event: Event): UIO[Unit] = event.eventDesc match {
-    case EventDesc.EvPostCreated(title, content) => ZIO.logInfo(content) // TODO
-    case EventDesc.EvSpaceCreated(spaceName) => ZIO.logInfo(spaceName) // TODO
+  override def handleEvent(event: Event): UIO[RunEffectsEvent] = {
+    val runEffectsEvent = event.eventDesc match {
+      case EventDesc.EvPostCreated(title, content) =>
+        for {
+          automations <- automationRepo.getAllByNetworkIdAndTrigger(
+            event.networkId,
+            Trigger.TrPostCreated
+          )
+          effects = automations
+            .flatMap(_.actions)
+            .map(actionToEffect)
+          runActionEvent = RunEffectsEvent(event.networkId, effects)
+        } yield runActionEvent
+
+      case EventDesc.EvSpaceCreated(spaceName) =>
+        for {
+          automations <- automationRepo.getAllByNetworkIdAndTrigger(
+            event.networkId,
+            Trigger.TrSpaceCreated
+          )
+          effects = automations
+            .flatMap(_.actions)
+            .map(actionToEffect)
+          runActionEvent = RunEffectsEvent(event.networkId, effects)
+        } yield runActionEvent
+    }
+
+    for {
+      runEffectsEvent <- runEffectsEvent
+      _ <- automationEffectRunner.runEffects(runEffectsEvent).forkDaemon
+    } yield runEffectsEvent
   }
+
+  private def actionToEffect(action: Action): Effect =
+    action match {
+      case Action.HttpPostRequest(url, jsonBody) =>
+        Effect.EffHttpPostRequest(url, jsonBody)
+      case Action.SendNotifToAll(message) =>
+        Effect.EffSendNotifToAll(message)
+    }
 
 }
 
 object AutomationServiceImpl {
-  val layer = ZLayer.fromFunction(AutomationServiceImpl(_))
+  val layer = ZLayer.fromFunction(AutomationServiceImpl(_, _))
 }
