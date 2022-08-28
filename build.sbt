@@ -45,22 +45,32 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.13" % "test"
 libraryDependencies += "org.scalatest" %% "scalatest-flatspec" % "3.2.13" % "test"
 libraryDependencies += "org.scalatest" %% "scalatest-shouldmatchers" % "3.2.13" % "test"
 
+libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "2.1.0"
 
 libraryDependencies += "com.github.ghostdogpr" %% "caliban-client" % "2.0.1"
 
+libraryDependencies += "javax.xml.bind" % "jaxb-api" % "2.3.1"
 
 val zioConfigVersion = "3.0.2"
 libraryDependencies += "dev.zio" %% "zio-config" % zioConfigVersion
 libraryDependencies += "dev.zio" %% "zio-config-magnolia" % zioConfigVersion
 libraryDependencies += "dev.zio" %% "zio-config-typesafe" % zioConfigVersion
 
+libraryDependencies ++= Seq(
+  "dev.zio" %% "zio-test" % "2.0.1" % Test,
+  "dev.zio" %% "zio-test-sbt" % "2.0.1" % Test,
+  "dev.zio" %% "zio-test-magnolia" % "2.0.1" % Test
+)
+testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
 
 addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 enablePlugins(CalibanPlugin)
 
+libraryDependencies += "com.wix" %% "accord-core" % "0.7.6"
+
 /* scalacOptions ++= Seq(          // use ++= to add to existing options */
 /* "-Ymacro-annotations" */
-/* ) */      
+/* ) */
 
 // Note, it's not required for you to define these three settings. These are
 // mostly only necessary if you intend to publish your library's binaries on a

@@ -8,6 +8,8 @@ import so.tribe.automation.config.ConfigServiceImpl
 import so.tribe.automation.config.HttpConfig
 import so.tribe.automation.healthcheck.HealthCheckRoutesImpl
 import so.tribe.automation.webhook.WebhookRoutesImpl
+import so.tribe.automation.automation.AutomationServiceImpl
+import so.tribe.automation.automation.InMemoryAutomationRepo
 
 object Main extends ZIOAppDefault {
   val httpServerLayer = {
@@ -49,6 +51,8 @@ object Main extends ZIOAppDefault {
       WebhookRoutesImpl.layer,
       HealthCheckRoutesImpl.layer,
       AppRouterImpl.layer,
+      AutomationServiceImpl.layer,
+      InMemoryAutomationRepo.layer,
       httpServerLayer
     )
 }
