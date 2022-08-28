@@ -16,8 +16,15 @@ object WebhookDTOs {
   case class WebhookPayload(
       networkId: String,
       @JsonKey("type") typ: WebhookType,
-      data: Option[JsonObject]
+      data: JsonObject
   )
+
+  case class PostPublishedData(
+      title: String,
+      shortContent: String,
+      isReply: Boolean
+  )
+  case class SpaceCreatedData(name: String)
 
 }
 
@@ -31,4 +38,10 @@ trait WebhookDTOsJsonSupport {
 
   implicit val webhookPayloadCodec: Codec[WebhookPayload] =
     deriveConfiguredCodec[WebhookPayload]
+
+  implicit val postPublishedDataCodec: Codec[PostPublishedData] =
+    deriveConfiguredCodec[PostPublishedData]
+
+  implicit val spaceCreatedDataCodec: Codec[SpaceCreatedData] =
+    deriveConfiguredCodec[SpaceCreatedData]
 }

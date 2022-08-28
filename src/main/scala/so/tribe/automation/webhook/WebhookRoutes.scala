@@ -8,13 +8,19 @@ import io.circe.{Json, JsonObject}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import so.tribe.automation.akkahttp.TribeSignatureDirective
 import WebhookDTOs._
+import so.tribe.automation.automation.AutomationService
+import so.tribe.automation.automation.domain._
+import akka.http.interop.ZIOSupport
 
 trait WebhookRoutes {
   def routes: Route
 }
 
-case class WebhookRoutesImpl(configService: ConfigService)
-    extends WebhookRoutes
+case class WebhookRoutesImpl(
+    configService: ConfigService,
+    automationService: AutomationService
+) extends WebhookRoutes
+    with ZIOSupport
     with WebhookDTOsJsonSupport {
 
   private def solveChallenge(data: JsonObject) = {
@@ -40,12 +46,49 @@ case class WebhookRoutesImpl(configService: ConfigService)
       ) {
         post {
           entity(as[WebhookPayload]) { payload =>
-            println(payload)
             payload.typ match {
               case WebhookType.TEST =>
-                solveChallenge(payload.data.get)
+                solveChallenge(payload.data)
+
               case WebhookType.SUBSCRIPTION =>
-                complete("ok")
+                val maybeWebhookName =
+                  payload
+                    .data("name")
+                    .flatMap(_.as[String].toOption)
+                maybeWebhookName match {
+                  case Some("space.created") =>
+                    val data = payload
+                      .data("object")
+                      .flatMap(_.as[SpaceCreatedData].toOption)
+                      .get
+
+                    val event = Event(
+                      payload.networkId,
+                      EventDesc.EvSpaceCreated(data.name)
+                    )
+
+                    val effect = automationService.handleEvent(event)
+                    complete(effect.map(_ => "ok"))
+
+                  case Some("post.published") =>
+                    val data = payload
+                      .data("object")
+                      .flatMap(_.as[PostPublishedData].toOption)
+                      .get
+
+                    val event = Event(
+                      payload.networkId,
+                      EventDesc.EvPostCreated(data.title, data.shortContent)
+                    )
+
+                    val effect =
+                      if (!data.isReply) automationService.handleEvent(event)
+                      else ZIO.succeed()
+
+                    complete(effect.map(_ => "ok"))
+                  case None | Some(_) => complete("ok")
+                }
+
             }
 
           }
@@ -56,7 +99,8 @@ case class WebhookRoutesImpl(configService: ConfigService)
 }
 
 object WebhookRoutesImpl {
-  val layer: URLayer[ConfigService, WebhookRoutes] = ZLayer.fromFunction {
-    (WebhookRoutesImpl(_))
-  }
+  val layer: URLayer[ConfigService with AutomationService, WebhookRoutes] =
+    ZLayer.fromFunction {
+      (WebhookRoutesImpl(_, _))
+    }
 }
