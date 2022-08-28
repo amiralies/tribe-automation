@@ -15,8 +15,6 @@ object domain {
     case object TrSpaceCreated extends Trigger
   }
 
-  case class AutomationAction(first: Action, rest: List[Action])
-
   sealed trait Action
   object Action {
     case class SendNotifToAll(message: String) extends Action
@@ -28,15 +26,26 @@ object domain {
       name: String,
       networkId: String,
       trigger: Trigger,
-      actions: AutomationAction
+      actions: List[Action]
   )
 
   case class CreateAutomationPayload(
       networkId: String,
       name: String,
       trigger: Trigger,
-      actions: AutomationAction
+      actions: List[Action]
   )
+
+  case class RunEffectsEvent(
+      networkId: String,
+      effects: List[Effect]
+  )
+
+  sealed trait Effect
+  object Effect {
+    case class EffSendNotifToAll(message: String) extends Effect
+    case class EffHttpPostRequest(url: String, jsonBody: String) extends Effect
+  }
 
   case object ValidationError
 }
@@ -48,5 +57,6 @@ object AutomationDomainValidators {
     validator[domain.CreateAutomationPayload] { p =>
       p.name is notEmpty
       p.networkId is notEmpty
+      p.actions is notEmpty
     }
 }
