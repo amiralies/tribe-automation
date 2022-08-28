@@ -11,6 +11,8 @@ import so.tribe.automation.webhook.WebhookRoutesImpl
 import so.tribe.automation.automation.AutomationServiceImpl
 import so.tribe.automation.automation.InMemoryAutomationRepo
 import so.tribe.automation.automation.AutomationEffectRunnerImpl
+import so.tribe.automation.tribeclient.TribeClientServiceImpl
+import sttp.client3.httpclient.zio.HttpClientZioBackend
 
 object Main extends ZIOAppDefault {
   val httpServerLayer = {
@@ -55,6 +57,8 @@ object Main extends ZIOAppDefault {
       AutomationServiceImpl.layer,
       InMemoryAutomationRepo.layer,
       AutomationEffectRunnerImpl.layer,
+      TribeClientServiceImpl.layer,
+      HttpClientZioBackend.layer(),
       httpServerLayer
     )
 }

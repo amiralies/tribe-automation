@@ -68,6 +68,9 @@ enablePlugins(CalibanPlugin)
 
 libraryDependencies += "com.wix" %% "accord-core" % "0.7.6"
 
+libraryDependencies += "com.softwaremill.sttp.client3" %% "core" % "3.7.6"
+libraryDependencies += "com.softwaremill.sttp.client3" %% "zio" % "3.7.6"
+
 /* scalacOptions ++= Seq(          // use ++= to add to existing options */
 /* "-Ymacro-annotations" */
 /* ) */
