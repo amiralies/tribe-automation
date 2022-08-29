@@ -13,6 +13,8 @@ import so.tribe.automation.automation.InMemoryAutomationRepo
 import so.tribe.automation.automation.AutomationEffectRunnerImpl
 import so.tribe.automation.tribeclient.TribeClientServiceImpl
 import sttp.client3.httpclient.zio.HttpClientZioBackend
+import so.tribe.automation.persist.mongo.MongoCollectionsHolderImpl
+import so.tribe.automation.automation.MongoAutomationRepo
 
 object Main extends ZIOAppDefault {
   val httpServerLayer = {
@@ -55,7 +57,8 @@ object Main extends ZIOAppDefault {
       HealthCheckRoutesImpl.layer,
       AppRouterImpl.layer,
       AutomationServiceImpl.layer,
-      InMemoryAutomationRepo.layer,
+      MongoCollectionsHolderImpl.layer,
+      MongoAutomationRepo.layer,
       AutomationEffectRunnerImpl.layer,
       TribeClientServiceImpl.layer,
       HttpClientZioBackend.layer(),
