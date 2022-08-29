@@ -130,6 +130,69 @@ object AutomationServiceSpec extends ZIOSpecDefault {
             List(Effect.EffSendNotifToAll("message"))
           )
       )
+    },
+    test(
+      "handleEvent should generate proper events for if actions"
+    ) {
+      for {
+        automationService <- ZIO.service[AutomationService]
+        networkId = "networkId3"
+        payload = CreateAutomationPayload(
+          networkId,
+          "First automation",
+          Trigger.TrPostCreated,
+          List(
+            Action.AcIf(
+              Condition.CdContains("content", "secretword"),
+              AcSendNotifToAll("Wow it has secret word"),
+              None
+            )
+          )
+        )
+        automation <- automationService.createAutomation(payload)
+        r <- automationService.handleEvent(
+          Event(
+            networkId,
+            EventDesc.EvPostCreated("hi", "this is my secretword bro")
+          )
+        )
+      } yield assertTrue(
+        r ==
+          RunEffectsEvent(
+            networkId,
+            List(Effect.EffSendNotifToAll("Wow it has secret word"))
+          )
+      )
+    },
+    test(
+      "handleEvent should generate proper events for if actions no exec"
+    ) {
+      for {
+        automationService <- ZIO.service[AutomationService]
+        networkId = "networkId4"
+        payload = CreateAutomationPayload(
+          networkId,
+          "First automation",
+          Trigger.TrPostCreated,
+          List(
+            Action.AcIf(
+              Condition.CdContains("content", "secretword"),
+              AcSendNotifToAll("Wow it has secret word"),
+              None
+            )
+          )
+        )
+        automation <- automationService.createAutomation(payload)
+        r <- automationService.handleEvent(
+          Event(networkId, EventDesc.EvPostCreated("hi", "nop no secret here"))
+        )
+      } yield assertTrue(
+        r ==
+          RunEffectsEvent(
+            networkId,
+            Nil
+          )
+      )
     }
   ).provideShared(
     AutomationServiceImpl.layer,

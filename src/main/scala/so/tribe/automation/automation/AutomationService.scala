@@ -46,6 +46,7 @@ case class AutomationServiceImpl(
         effects = automations
           .flatMap(_.actions)
           .map(AutomationActionInterpreter.interpret(_, env))
+          .flatten
         runActionEvent = RunEffectsEvent(event.networkId, effects)
       } yield runActionEvent
 

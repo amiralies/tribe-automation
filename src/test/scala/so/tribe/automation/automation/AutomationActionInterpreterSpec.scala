@@ -23,14 +23,14 @@ class AutomationActionInterpreterSpec extends AnyFlatSpec with Matchers {
     )
   }
 
-  it should "interpret shoudl create proper effects for simple actions" in {
+  it should "interpret should create proper effects for simple actions" in {
 
     val effect = AutomationActionInterpreter.interpret(
       Action.AcSendNotifToAll("Hi {{title}}, {{content}}"),
       Map("title" -> "foo", "content" -> "great stuff")
     )
 
-    effect shouldBe Effect.EffSendNotifToAll("Hi foo, great stuff")
+    effect shouldBe Some(Effect.EffSendNotifToAll("Hi foo, great stuff"))
   }
 
 }

@@ -2,27 +2,52 @@ package so.tribe.automation.automation
 
 import domain._
 import domain.EventDesc.{EvPostCreated, EvSpaceCreated}
+import domain.Action._
 import so.tribe.automation.Utils
+import so.tribe.automation.automation.domain.Condition._
 
 private[automation] object AutomationActionInterpreter {
   def makeEnv(eventDesc: EventDesc): Env = {
     eventDesc match {
       case EvPostCreated(title, content) =>
-        Map("title" -> title, "content" -> content)
-      case EvSpaceCreated(spaceName) => Map("spaceName" -> spaceName)
+        Trigger.TrPostCreated.fieldNames.collect {
+          case k @ "title"   => k -> title
+          case k @ "content" => k -> content
+        }.toMap
+      case EvSpaceCreated(spaceName) =>
+        Trigger.TrSpaceCreated.fieldNames.collect { case k @ "spaceName" =>
+          k -> spaceName
+        }.toMap
     }
   }
 
-  def interpret(action: Action, env: Env): Effect = {
+  def evalCondition(condition: Condition, env: Env): Boolean =
+    condition match {
+      case CdEq(fieldName, value)       => env(fieldName) == value
+      case CdContains(fieldName, value) => env(fieldName).contains(value)
+      case CdAnd(left, right) =>
+        evalCondition(left, env) && evalCondition(right, env)
+      case CdOr(left, right) =>
+        evalCondition(left, env) || evalCondition(right, env)
+    }
+
+  def interpret(action: Action, env: Env): Option[Effect] = {
     action match {
-      case Action.AcHttpPostRequest(url, jsonBody) =>
-        Effect.EffHttpPostRequest(
-          supplyVariables(url, env),
-          supplyVariables(jsonBody, env)
+      case AcHttpPostRequest(url, jsonBody) =>
+        Some(
+          Effect.EffHttpPostRequest(
+            supplyVariables(url, env),
+            supplyVariables(jsonBody, env)
+          )
         )
 
-      case Action.AcSendNotifToAll(message) =>
-        Effect.EffSendNotifToAll(supplyVariables(message, env))
+      case AcSendNotifToAll(message) =>
+        Some(Effect.EffSendNotifToAll(supplyVariables(message, env)))
+
+      case AcIf(condition, elseBranch, thenBranch) =>
+        if (evalCondition(condition, env))
+          interpret(elseBranch, env)
+        else thenBranch.flatMap(interpret(_, env))
     }
   }
 
