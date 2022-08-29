@@ -32,18 +32,38 @@ object domain {
       actions: List[Action]
   )
 
-  sealed trait Trigger extends EnumEntry
+  sealed trait Trigger extends EnumEntry {
+    val fieldNames: Set[String]
+  }
   object Trigger extends Enum[Trigger] with CirceEnum[Trigger] {
-    case object TrPostCreated extends Trigger
-    case object TrSpaceCreated extends Trigger
+    case object TrPostCreated extends Trigger {
+      val fieldNames = Set("title", "content")
+    }
+    case object TrSpaceCreated extends Trigger {
+      val fieldNames = Set("spaceName")
+    }
 
     def values = findValues
+
   }
 
   sealed trait Action
   object Action {
     case class AcSendNotifToAll(message: String) extends Action
     case class AcHttpPostRequest(url: String, jsonBody: String) extends Action
+    case class AcIf(
+        condition: Condition,
+        elseBranch: Action,
+        thenBranch: Option[Action]
+    ) extends Action
+  }
+
+  sealed trait Condition
+  object Condition {
+    case class CdEq(fieldName: String, value: String) extends Condition
+    case class CdAnd(left: Condition, right: Condition) extends Condition
+    case class CdOr(left: Condition, right: Condition) extends Condition
+    case class CdContains(fieldName: String, value: String) extends Condition
   }
 
   case class CreateAutomationPayload(
@@ -83,6 +103,9 @@ object DomainJsonSupport {
   implicit val actionCodec: Codec[Action] =
     deriveConfiguredCodec[Action]
 
+  implicit val condCodec: Codec[Condition] =
+    deriveConfiguredCodec[Condition]
+
 }
 
 object DomainBsonSupport {
@@ -93,11 +116,38 @@ object DomainBsonSupport {
 
 object AutomationDomainValidators {
   import com.wix.accord.dsl._
+  import domain._
+  import Action._
+  import Condition._
+
+  def isConditionValid(trigger: Trigger, condition: Condition): Boolean =
+    condition match {
+      case CdEq(fieldName, _) => trigger.fieldNames.contains(fieldName)
+      case CdAnd(left, right) =>
+        List(left, right).forall(isConditionValid(trigger, _))
+      case CdOr(left, right) =>
+        List(left, right).forall(isConditionValid(trigger, _))
+      case CdContains(fieldName, _) =>
+        trigger.fieldNames.contains(fieldName)
+    }
+
+  def isActionValid(trigger: Trigger, action: Action): Boolean = {
+    action match {
+      case AcIf(condition, elseBranch, thenBranch) =>
+        List(
+          isActionValid(trigger, elseBranch),
+          isConditionValid(trigger, condition),
+          thenBranch.forall(isActionValid(trigger, _))
+        ).forall(identity)
+      case _ => true
+    }
+  }
 
   implicit val createAutomationPayloadValidator =
     validator[domain.CreateAutomationPayload] { p =>
       p.name is notEmpty
       p.networkId is notEmpty
       p.actions is notEmpty
+      p.actions.forall(isActionValid(p.trigger, _)) is true
     }
 }

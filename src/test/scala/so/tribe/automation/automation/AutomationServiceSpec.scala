@@ -3,6 +3,8 @@ package so.tribe.automation.automation
 import zio.test._
 import zio._
 import domain._
+import Action._
+import Condition._
 
 object AutomationServiceSpec extends ZIOSpecDefault {
   def spec = suite("AutomationServiceSpec")(
@@ -51,6 +53,43 @@ object AutomationServiceSpec extends ZIOSpecDefault {
           "",
           Trigger.TrPostCreated,
           List(Action.AcSendNotifToAll("message"))
+        )
+        error <- automationService.createAutomation(payload).flip
+      } yield assertTrue(error == ValidationError)
+    },
+    test("createAutomation should create an automation with correct if field") {
+      for {
+        automationService <- ZIO.service[AutomationService]
+        payload = CreateAutomationPayload(
+          "networkId",
+          "First automation",
+          Trigger.TrSpaceCreated,
+          List(
+            AcIf(
+              CdEq("spaceName", "General"),
+              AcSendNotifToAll("General space has been created"),
+              None
+            )
+          )
+        )
+        automation <- automationService.createAutomation(payload)
+      } yield assertTrue(true)
+
+    },
+    test("createAutomation should fail with wrong if field") {
+      for {
+        automationService <- ZIO.service[AutomationService]
+        payload = CreateAutomationPayload(
+          "networkId",
+          "First automation",
+          Trigger.TrSpaceCreated,
+          List(
+            AcIf(
+              CdEq("spacenotName", "General"),
+              AcSendNotifToAll("General space has been created"),
+              None
+            )
+          )
         )
         error <- automationService.createAutomation(payload).flip
       } yield assertTrue(error == ValidationError)
