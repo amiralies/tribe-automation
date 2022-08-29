@@ -1,5 +1,13 @@
 package so.tribe.automation.automation
 
+import enumeratum.{Enum, EnumEntry, CirceEnum}
+import reactivemongo.api.bson.Macros
+import reactivemongo.api.bson.BSONDocumentHandler
+import reactivemongo.api.bson.BSONDocument
+import scala.util.Try
+import so.tribe.automation.persist.mongo.MongoUtils
+import io.circe.generic.extras.JsonKey
+
 object domain {
   case class Event(networkId: String, eventDesc: EventDesc)
 
@@ -9,10 +17,12 @@ object domain {
     case class EvSpaceCreated(spaceName: String) extends EventDesc
   }
 
-  sealed trait Trigger
-  object Trigger {
+  sealed trait Trigger extends EnumEntry
+  object Trigger extends Enum[Trigger] with CirceEnum[Trigger] {
     case object TrPostCreated extends Trigger
     case object TrSpaceCreated extends Trigger
+
+    def values = findValues
   }
 
   sealed trait Action
@@ -22,7 +32,7 @@ object domain {
   }
 
   case class Automation(
-      id: String,
+      @JsonKey("_id") id: String,
       name: String,
       networkId: String,
       trigger: Trigger,
@@ -48,6 +58,30 @@ object domain {
   }
 
   case object ValidationError
+}
+
+object DomainJsonSupport {
+  import domain._
+  import so.tribe.automation.Constants
+  import io.circe.generic.extras.Configuration
+  import io.circe.generic.extras.semiauto.deriveConfiguredCodec
+  import io.circe.Codec
+
+  implicit val jsonConfig: Configuration =
+    Configuration.default.withDiscriminator(Constants.SUMTYPE_TAG_KEY)
+
+  implicit val automationCodec: Codec[Automation] =
+    deriveConfiguredCodec[Automation]
+
+  implicit val actionCodec: Codec[Action] =
+    deriveConfiguredCodec[Action]
+
+}
+
+object DomainBsonSupport {
+  import domain._
+  import DomainJsonSupport._
+  implicit val automationHandler = MongoUtils.genBsonHandler[Automation]
 }
 
 object AutomationDomainValidators {
