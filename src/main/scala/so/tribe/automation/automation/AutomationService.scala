@@ -35,7 +35,7 @@ case class AutomationServiceImpl(
   } yield automation
 
   override def handleEvent(event: Event): UIO[RunEffectsEvent] = {
-    val env = EventDesc.toEnv(event.eventDesc)
+    val env = AutomationActionInterpreter.makeEnv(event.eventDesc)
 
     val runEffectsEvent =
       for {
@@ -45,7 +45,7 @@ case class AutomationServiceImpl(
         )
         effects = automations
           .flatMap(_.actions)
-          .map(evalAction(_, env))
+          .map(AutomationActionInterpreter.interpret(_, env))
         runActionEvent = RunEffectsEvent(event.networkId, effects)
       } yield runActionEvent
 
@@ -54,26 +54,6 @@ case class AutomationServiceImpl(
       _ <- automationEffectRunner.runEffects(runEffectsEvent).forkDaemon
     } yield runEffectsEvent
   }
-
-  private def evalAction(action: Action, env: Env): Effect = {
-    action match {
-      case Action.HttpPostRequest(url, jsonBody) =>
-        Effect.EffHttpPostRequest(
-          supplyVariables(url, env),
-          supplyVariables(jsonBody, env)
-        )
-
-      case Action.SendNotifToAll(message) =>
-        Effect.EffSendNotifToAll(supplyVariables(message, env))
-    }
-  }
-
-  private def supplyVariables(str: String, env: Env): String =
-    env.toList.foldLeft(str)((acc, fieldPair) => {
-      val (fieldName, fieldValue) = fieldPair
-      val pat = Utils.mustachePatternForField(fieldName)
-      pat.replaceAllIn(acc, fieldValue)
-    })
 
 }
 

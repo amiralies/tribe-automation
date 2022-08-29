@@ -18,12 +18,6 @@ object domain {
     case class EvPostCreated(title: String, content: String) extends EventDesc
     case class EvSpaceCreated(spaceName: String) extends EventDesc
 
-    def toEnv(desc: EventDesc) = desc match {
-      case EvPostCreated(title, content) =>
-        Map("title" -> title, "content" -> content)
-      case EvSpaceCreated(spaceName) => Map("spaceName" -> spaceName)
-    }
-
     def toTrigger(desc: EventDesc) = desc match {
       case EvPostCreated(_, _) => Trigger.TrPostCreated
       case EvSpaceCreated(_)   => Trigger.TrSpaceCreated
