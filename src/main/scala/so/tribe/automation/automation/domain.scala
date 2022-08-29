@@ -42,8 +42,8 @@ object domain {
 
   sealed trait Action
   object Action {
-    case class SendNotifToAll(message: String) extends Action
-    case class HttpPostRequest(url: String, jsonBody: String) extends Action
+    case class AcSendNotifToAll(message: String) extends Action
+    case class AcHttpPostRequest(url: String, jsonBody: String) extends Action
   }
 
   case class CreateAutomationPayload(

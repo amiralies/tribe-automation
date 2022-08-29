@@ -13,7 +13,7 @@ object AutomationServiceSpec extends ZIOSpecDefault {
           "networkId",
           "First automation",
           Trigger.TrPostCreated,
-          List(Action.SendNotifToAll("message"))
+          List(Action.AcSendNotifToAll("message"))
         )
         automation <- automationService.createAutomation(payload)
       } yield assertTrue(true)
@@ -26,7 +26,7 @@ object AutomationServiceSpec extends ZIOSpecDefault {
           "",
           "First automation",
           Trigger.TrPostCreated,
-          List(Action.SendNotifToAll("message"))
+          List(Action.AcSendNotifToAll("message"))
         )
         error <- automationService.createAutomation(payload).flip
       } yield assertTrue(error == ValidationError)
@@ -50,7 +50,7 @@ object AutomationServiceSpec extends ZIOSpecDefault {
           "networkId",
           "",
           Trigger.TrPostCreated,
-          List(Action.SendNotifToAll("message"))
+          List(Action.AcSendNotifToAll("message"))
         )
         error <- automationService.createAutomation(payload).flip
       } yield assertTrue(error == ValidationError)
@@ -78,7 +78,7 @@ object AutomationServiceSpec extends ZIOSpecDefault {
           "networkId2",
           "First automation",
           Trigger.TrPostCreated,
-          List(Action.SendNotifToAll("message"))
+          List(Action.AcSendNotifToAll("message"))
         )
         automation <- automationService.createAutomation(payload)
         r <- automationService.handleEvent(

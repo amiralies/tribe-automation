@@ -15,13 +15,13 @@ private[automation] object AutomationActionInterpreter {
 
   def interpret(action: Action, env: Env): Effect = {
     action match {
-      case Action.HttpPostRequest(url, jsonBody) =>
+      case Action.AcHttpPostRequest(url, jsonBody) =>
         Effect.EffHttpPostRequest(
           supplyVariables(url, env),
           supplyVariables(jsonBody, env)
         )
 
-      case Action.SendNotifToAll(message) =>
+      case Action.AcSendNotifToAll(message) =>
         Effect.EffSendNotifToAll(supplyVariables(message, env))
     }
   }
