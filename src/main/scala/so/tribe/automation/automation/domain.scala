@@ -17,6 +17,14 @@ object domain {
     case class EvSpaceCreated(spaceName: String) extends EventDesc
   }
 
+  case class Automation(
+      @JsonKey("_id") id: String,
+      name: String,
+      networkId: String,
+      trigger: Trigger,
+      actions: List[Action]
+  )
+
   sealed trait Trigger extends EnumEntry
   object Trigger extends Enum[Trigger] with CirceEnum[Trigger] {
     case object TrPostCreated extends Trigger
@@ -30,14 +38,6 @@ object domain {
     case class SendNotifToAll(message: String) extends Action
     case class HttpPostRequest(url: String, jsonBody: String) extends Action
   }
-
-  case class Automation(
-      @JsonKey("_id") id: String,
-      name: String,
-      networkId: String,
-      trigger: Trigger,
-      actions: List[Action]
-  )
 
   case class CreateAutomationPayload(
       networkId: String,
