@@ -11,6 +11,7 @@ import WebhookDTOs._
 import so.tribe.automation.automation.AutomationService
 import so.tribe.automation.automation.domain._
 import akka.http.interop.ZIOSupport
+import so.tribe.automation.Utils
 
 trait WebhookRoutes {
   def routes: Route
@@ -78,7 +79,10 @@ case class WebhookRoutesImpl(
 
                     val event = Event(
                       payload.networkId,
-                      EventDesc.EvPostCreated(data.title, data.shortContent)
+                      EventDesc.EvPostCreated(
+                        data.title,
+                        Utils.stripHtml(data.shortContent)
+                      )
                     )
 
                     val effect =
