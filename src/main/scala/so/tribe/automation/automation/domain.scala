@@ -9,12 +9,25 @@ import so.tribe.automation.persist.mongo.MongoUtils
 import io.circe.generic.extras.JsonKey
 
 object domain {
+  type Env = Map[String, String]
+
   case class Event(networkId: String, eventDesc: EventDesc)
 
   sealed trait EventDesc
   object EventDesc {
     case class EvPostCreated(title: String, content: String) extends EventDesc
     case class EvSpaceCreated(spaceName: String) extends EventDesc
+
+    def toEnv(desc: EventDesc) = desc match {
+      case EvPostCreated(title, content) =>
+        Map("title" -> title, "content" -> content)
+      case EvSpaceCreated(spaceName) => Map("spaceName" -> spaceName)
+    }
+
+    def toTrigger(desc: EventDesc) = desc match {
+      case EvPostCreated(_, _) => Trigger.TrPostCreated
+      case EvSpaceCreated(_)   => Trigger.TrSpaceCreated
+    }
   }
 
   case class Automation(

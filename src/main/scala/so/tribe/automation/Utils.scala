@@ -45,4 +45,7 @@ object Utils {
       case Success => ZIO.succeed()
     }
 
+  def mustachePatternForField(fieldName: String) =
+    s"""\\{\\{${fieldName}\\}\\}""".r
+
 }

@@ -91,6 +91,31 @@ object AutomationServiceSpec extends ZIOSpecDefault {
             List(Effect.EffSendNotifToAll("message"))
           )
       )
+    },
+    test(
+      "handlEvent should eval fields"
+    ) {
+
+      for {
+        automationService <- ZIO.service[AutomationService]
+        networkId = "networkId3"
+        payload = CreateAutomationPayload(
+          networkId,
+          "First automation",
+          Trigger.TrPostCreated,
+          List(Action.SendNotifToAll("Hi {{title}}, {{content}}"))
+        )
+        automation <- automationService.createAutomation(payload)
+        r <- automationService.handleEvent(
+          Event(networkId, EventDesc.EvPostCreated("foo", "great stuff"))
+        )
+      } yield assertTrue(
+        r ==
+          RunEffectsEvent(
+            networkId,
+            List(Effect.EffSendNotifToAll("Hi foo, great stuff"))
+          )
+      )
     }
   ).provideShared(
     AutomationServiceImpl.layer,
