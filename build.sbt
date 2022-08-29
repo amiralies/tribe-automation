@@ -71,6 +71,9 @@ libraryDependencies += "com.wix" %% "accord-core" % "0.7.6"
 libraryDependencies += "com.softwaremill.sttp.client3" %% "core" % "3.7.6"
 libraryDependencies += "com.softwaremill.sttp.client3" %% "zio" % "3.7.6"
 
+libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "1.0.10"
+libraryDependencies += "io.circe" %% "circe-bson" % "0.5.0"
+
 /* scalacOptions ++= Seq(          // use ++= to add to existing options */
 /* "-Ymacro-annotations" */
 /* ) */
