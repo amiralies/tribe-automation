@@ -29,6 +29,23 @@ case class MongoAutomationRepo(mongoCollectionsHolder: MongoCollectionsHolder)
     automationCollection.find(query).cursor[domain.Automation]().collect[List]()
   }.orDie
 
+  override def deleteById(id: String): UIO[Option[domain.Automation]] =
+    ZIO.fromFuture { implicit ec =>
+      val selector = BSONDocument("_id" -> id)
+
+      automationCollection
+        .findAndRemove(selector)
+        .map(_.result[domain.Automation])
+    }.orDie
+
+  override def getByNetworkId(
+      networkId: String
+  ): UIO[List[domain.Automation]] = ZIO.fromFuture { implicit ec =>
+    val query = BSONDocument("networkId" -> networkId)
+
+    automationCollection.find(query).cursor[domain.Automation]().collect[List]()
+  }.orDie
+
 }
 
 object MongoAutomationRepo {

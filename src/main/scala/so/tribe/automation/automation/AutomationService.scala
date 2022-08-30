@@ -9,9 +9,16 @@ import com.wix.accord._
 trait AutomationService {
   def createAutomation(
       payload: CreateAutomationPayload
-  ): IO[ValidationError.type, Automation]
+  ): IO[DomainFailure, Automation]
+
+  def deleteAutomation(
+      automationId: String
+  ): IO[DomainFailure, Automation]
+
+  def getNetworkAutomations(networkId: String): UIO[List[Automation]]
 
   def handleEvent(event: Event): UIO[RunEffectsEvent]
+
 }
 
 case class AutomationServiceImpl(
@@ -21,8 +28,10 @@ case class AutomationServiceImpl(
 
   override def createAutomation(
       payload: CreateAutomationPayload
-  ): IO[ValidationError.type, Automation] = for {
-    () <- Utils.zioValidate(payload).mapError(_ => ValidationError)
+  ): IO[DomainFailure, Automation] = for {
+    () <- Utils
+      .zioValidate(payload)
+      .mapError(_ => DomainFailure.ValidationError)
     id = Utils.genUrlSafeUUID()
     automation = Automation(
       id,
@@ -33,6 +42,19 @@ case class AutomationServiceImpl(
     )
     () <- automationRepo.insert(automation)
   } yield automation
+
+  override def deleteAutomation(
+      automationId: String
+  ): IO[DomainFailure, Automation] =
+    automationRepo
+      .deleteById(automationId)
+      .flatMap({
+        case None             => ZIO.fail(DomainFailure.NotFound)
+        case Some(automation) => ZIO.succeed(automation)
+      })
+
+  override def getNetworkAutomations(networkId: String): UIO[List[Automation]] =
+    automationRepo.getByNetworkId(networkId)
 
   override def handleEvent(event: Event): UIO[RunEffectsEvent] = {
     val env = AutomationActionInterpreter.makeEnv(event.eventDesc)

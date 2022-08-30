@@ -84,7 +84,12 @@ object domain {
     case class EffHttpPostRequest(url: String, jsonBody: String) extends Effect
   }
 
-  case object ValidationError
+  sealed trait DomainFailure
+  object DomainFailure {
+    case object ValidationError extends DomainFailure
+    case object NotFound extends DomainFailure
+  }
+
 }
 
 object DomainJsonSupport {

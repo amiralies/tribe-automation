@@ -31,7 +31,7 @@ object AutomationServiceSpec extends ZIOSpecDefault {
           List(Action.AcSendNotifToAll("message"))
         )
         error <- automationService.createAutomation(payload).flip
-      } yield assertTrue(error == ValidationError)
+      } yield assertTrue(error == DomainFailure.ValidationError)
     },
     test("createAutomation should fail when actions is empty") {
       for {
@@ -43,7 +43,7 @@ object AutomationServiceSpec extends ZIOSpecDefault {
           List()
         )
         error <- automationService.createAutomation(payload).flip
-      } yield assertTrue(error == ValidationError)
+      } yield assertTrue(error == DomainFailure.ValidationError)
     },
     test("createAutomation should fail when name is empty") {
       for {
@@ -55,7 +55,7 @@ object AutomationServiceSpec extends ZIOSpecDefault {
           List(Action.AcSendNotifToAll("message"))
         )
         error <- automationService.createAutomation(payload).flip
-      } yield assertTrue(error == ValidationError)
+      } yield assertTrue(error == DomainFailure.ValidationError)
     },
     test("createAutomation should create an automation with correct if field") {
       for {
@@ -92,7 +92,7 @@ object AutomationServiceSpec extends ZIOSpecDefault {
           )
         )
         error <- automationService.createAutomation(payload).flip
-      } yield assertTrue(error == ValidationError)
+      } yield assertTrue(error == DomainFailure.ValidationError)
     },
     test(
       "handlEvent should generate empty runactionevent list when here's no automation"
@@ -193,6 +193,84 @@ object AutomationServiceSpec extends ZIOSpecDefault {
             Nil
           )
       )
+    },
+    test(
+      "getNetworkAutomations should return all network automations"
+    ) {
+      for {
+        automationService <- ZIO.service[AutomationService]
+        networkId = "networkId5"
+        payload = CreateAutomationPayload(
+          networkId,
+          "network 5 1",
+          Trigger.TrPostCreated,
+          List(
+            Action.AcIf(
+              Condition.CdContains("content", "secretword"),
+              AcSendNotifToAll("Wow it has secret word"),
+              None
+            )
+          )
+        )
+        automation <- automationService.createAutomation(payload)
+
+        payload2 = CreateAutomationPayload(
+          networkId,
+          "network 5 2",
+          Trigger.TrPostCreated,
+          List(
+            Action.AcIf(
+              Condition.CdContains("content", "secretword"),
+              AcSendNotifToAll("Wow it has secret word"),
+              None
+            )
+          )
+        )
+        automation <- automationService.createAutomation(payload2)
+
+        automations <- automationService.getNetworkAutomations(networkId)
+      } yield assertTrue(
+        automations.map(_.name).sorted == List("network 5 1", "network 5 2")
+      )
+    },
+    test(
+      "deleteAutomation should delete an automation by id"
+    ) {
+      for {
+        automationService <- ZIO.service[AutomationService]
+        networkId = "networkId6"
+        payload = CreateAutomationPayload(
+          networkId,
+          "network 6 1",
+          Trigger.TrPostCreated,
+          List(
+            Action.AcIf(
+              Condition.CdContains("content", "secretword"),
+              AcSendNotifToAll("Wow it has secret word"),
+              None
+            )
+          )
+        )
+        automation <- automationService.createAutomation(payload)
+        automationsBeforeDelete <- automationService.getNetworkAutomations(
+          networkId
+        )
+        _ <- automationService.deleteAutomation(automation.id)
+        automationsAfterDelete <- automationService.getNetworkAutomations(
+          networkId
+        )
+      } yield assertTrue(
+        automationsBeforeDelete.map(_.name) == List("network 6 1") &&
+          automationsAfterDelete.map(_.name) == List()
+      )
+    },
+    test(
+      "deleteAutomation should return not found on invalid id"
+    ) {
+      for {
+        automationService <- ZIO.service[AutomationService]
+        error <- automationService.deleteAutomation("ThisIdDoesenotExist").flip
+      } yield assertTrue(error == DomainFailure.NotFound)
     }
   ).provideShared(
     AutomationServiceImpl.layer,

@@ -17,6 +17,13 @@ case class InMemoryAutomationRepo(mapRef: Ref[Map[String, Automation]])
     })
     .map(_.values.toList)
 
+  override def deleteById(id: String): UIO[Option[Automation]] =
+    mapRef.modify(m => (m.get(id), m.removed(id)))
+
+  override def getByNetworkId(networkId: String): UIO[List[Automation]] =
+    mapRef.get
+      .map(_.filter(_._2.networkId == networkId))
+      .map(_.values.toList)
 }
 
 object InMemoryAutomationRepo {

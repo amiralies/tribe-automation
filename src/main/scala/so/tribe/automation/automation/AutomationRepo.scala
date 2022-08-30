@@ -11,4 +11,7 @@ trait AutomationRepo {
       trigger: Trigger
   ): UIO[List[Automation]]
 
+  def deleteById(id: String): UIO[Option[Automation]]
+
+  def getByNetworkId(networkId: String): UIO[List[Automation]]
 }
