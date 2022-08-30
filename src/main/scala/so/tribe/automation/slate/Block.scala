@@ -33,7 +33,7 @@ object Block {
         id = b.id,
         name = b.name,
         children = serilizeChildren(b),
-        props = serilizeProps(b.name == "RawText", b.props)
+        props = serilizeProps(b.name, b.props)
       )
     }
 
@@ -63,13 +63,16 @@ object Block {
     }
 
   private def serilizeProps(
-      isRawText: Boolean,
+      blockName: String,
       props: Map[String, String]
   ): Option[String] =
     if (props.isEmpty) {
       None
     } else {
-      if (!isRawText) {
+      if (Set("RawText", "RichText").contains(blockName)) {
+        props.get("value").map(_.asJson.noSpaces)
+      } else {
+
         val propsCleaned = props
           .mapValues({
             case "false" => false.asJson
@@ -78,8 +81,6 @@ object Block {
           })
           .toMap
         Some(JsonObject.fromMap(propsCleaned).asJson.noSpaces)
-      } else {
-        props.get("value").map(_.asJson.noSpaces)
       }
     }
 
