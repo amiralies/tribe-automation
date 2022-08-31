@@ -53,8 +53,8 @@ object domain {
     case class AcHttpPostRequest(url: String, jsonBody: String) extends Action
     case class AcIf(
         condition: Condition,
-        elseBranch: Action,
-        thenBranch: Option[Action]
+        thenBranch: Action,
+        elseBranch: Option[Action]
     ) extends Action
   }
 
@@ -141,11 +141,11 @@ object AutomationDomainValidators {
 
   def isActionValid(trigger: Trigger, action: Action): Boolean = {
     action match {
-      case AcIf(condition, elseBranch, thenBranch) =>
+      case AcIf(condition, thenBranch, elseBranch) =>
         List(
-          isActionValid(trigger, elseBranch),
+          isActionValid(trigger, thenBranch),
           isConditionValid(trigger, condition),
-          thenBranch.forall(isActionValid(trigger, _))
+          elseBranch.forall(isActionValid(trigger, _))
         ).forall(identity)
       case _ => true
     }

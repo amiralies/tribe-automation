@@ -44,10 +44,10 @@ private[automation] object AutomationActionInterpreter {
       case AcSendNotifToAll(message) =>
         Some(Effect.EffSendNotifToAll(supplyVariables(message, env)))
 
-      case AcIf(condition, elseBranch, thenBranch) =>
+      case AcIf(condition, thenBranch, elseBranch) =>
         if (evalCondition(condition, env))
-          interpret(elseBranch, env)
-        else thenBranch.flatMap(interpret(_, env))
+          interpret(thenBranch, env)
+        else elseBranch.flatMap(interpret(_, env))
     }
   }
 
