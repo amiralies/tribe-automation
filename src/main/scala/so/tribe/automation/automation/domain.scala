@@ -111,6 +111,9 @@ object DomainJsonSupport {
   implicit val condCodec: Codec[Condition] =
     deriveConfiguredCodec[Condition]
 
+  implicit val createAutomationPayloadCodec: Codec[CreateAutomationPayload] =
+    deriveConfiguredCodec[CreateAutomationPayload]
+
 }
 
 object DomainBsonSupport {
