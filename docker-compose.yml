@@ -1,0 +1,33 @@
+version: '3.1'
+
+services:
+  tribe-automation:
+    build: .
+    container_name: tribe-automation
+    depends_on:
+      - mongodb
+    environment:
+      - CLIENT_SECRET=${CLIENT_SECRET}
+      - PORT=8080
+      - HOST="0.0.0.0"
+      - DB_URI=mongodb://mongodb:27017
+      - DB_NAME=tribe
+    ports:
+      - 127.0.0.1:8080:8080
+    networks:
+      - default
+  mongodb:
+    image: mongo:4
+    restart: always
+    container_name: mongodb
+    volumes:
+      - tribe-mongodb:/data/db
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge
+
+volumes:
+  tribe-mongodb:
