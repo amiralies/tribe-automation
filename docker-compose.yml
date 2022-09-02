@@ -9,11 +9,11 @@ services:
     environment:
       - CLIENT_SECRET=${CLIENT_SECRET}
       - PORT=8080
-      - HOST="0.0.0.0"
+      - HOST=0.0.0.0
       - DB_URI=mongodb://mongodb:27017
       - DB_NAME=tribe
     ports:
-      - 127.0.0.1:8080:8080
+      - ${PORT}:8080
     networks:
       - default
   mongodb:
